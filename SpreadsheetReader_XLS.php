@@ -63,9 +63,16 @@
 				throw new Exception('SpreadsheetReader_XLS: File not readable ('.$Filepath.')');
 			}
 
+
 			if (!class_exists('Spreadsheet_Excel_Reader'))
 			{
-				throw new Exception('SpreadsheetReader_XLS: Spreadsheet_Excel_Reader class not available');
+				$dependency_file = __DIR__ . '/php-excel-reader/excel_reader2.php';
+				if (file_exists($dependency_file)) {
+					require_once($dependency_file);
+				}
+				else {
+					throw new Exception('SpreadsheetReader_XLS: Spreadsheet_Excel_Reader class not available');
+				}
 			}
 
 			$this -> Handle = new Spreadsheet_Excel_Reader($Filepath, false, 'UTF-8');
@@ -161,10 +168,10 @@
 		}
 
 		// !Iterator interface methods
-		/** 
+		/**
 		 * Rewind the Iterator to the first element.
 		 * Similar to the reset() function for arrays in PHP
-		 */ 
+		 */
 		public function rewind()
 		{
 			$this -> Index = 0;
@@ -186,10 +193,10 @@
 			return $this -> CurrentRow;
 		}
 
-		/** 
-		 * Move forward to next element. 
-		 * Similar to the next() function for arrays in PHP 
-		 */ 
+		/**
+		 * Move forward to next element.
+		 * Similar to the next() function for arrays in PHP
+		 */
 		public function next()
 		{
 			// Internal counter is advanced here instead of the if statement
@@ -222,23 +229,23 @@
 			}
 		}
 
-		/** 
+		/**
 		 * Return the identifying key of the current element.
 		 * Similar to the key() function for arrays in PHP
 		 *
 		 * @return mixed either an integer or a string
-		 */ 
+		 */
 		public function key()
 		{
 			return $this -> Index;
 		}
 
-		/** 
+		/**
 		 * Check if there is a current element after calls to rewind() or next().
 		 * Used to check if we've iterated to the end of the collection
 		 *
 		 * @return boolean FALSE if there's nothing more to iterate over
-		 */ 
+		 */
 		public function valid()
 		{
 			if ($this -> Error)
