@@ -23,6 +23,8 @@ class Test extends PHPUnit_Framework_TestCase
 		'users.xlsx',
 		'Sheets.xlsx',	# The sheet file name starts with a capitical S.
 		'inconsistant_case.xlsx',	# The actual sheet file name is Sheet1.xml but the rels file refers to it as 'sheet1.xml'. Crystal Reports does this.
+		'ods.zip',
+		'xlsx.zip',
 	);
 
 	public function testRequire() {
@@ -47,6 +49,7 @@ class Test extends PHPUnit_Framework_TestCase
 		$class = static::CLASS_NAME;
 		$methods = array(
 			'__construct'		=> ReflectionMethod::IS_PUBLIC,
+			'getReaderType'		=> ReflectionMethod::IS_PUBLIC,
 			'Sheets'			=> ReflectionMethod::IS_PUBLIC,
 			'ChangeSheet'		=> ReflectionMethod::IS_PUBLIC,
 			'Load'				=> ReflectionMethod::IS_PRIVATE | ReflectionMethod::IS_STATIC,
@@ -88,12 +91,14 @@ class Test extends PHPUnit_Framework_TestCase
 		$expect_col_count = 16;
 		$expect_row_count = 6;	# count() is wrong for all types except XLS by design.
 		foreach (static::$files as $file) {
-			$file_encoding = preg_match('/\.xls$/i', $file) ? 'Windows-1252' : 'UTF-8';	# XLS stores data in 8 bit Windows 'ANSI' format, but which exact encoding is unknown. All other files are in UTF-8.
 			$reader = new $class("data/$file");
+			$type = $reader->getReaderType();
+			$file_encoding = $type == $class::TYPE_XLS ? 'Windows-1252' : 'UTF-8';	# XLS stores data in 8 bit Windows 'ANSI' format, but which exact encoding is unknown. All other files are in UTF-8.
+
 			$row = $reader->current();
 
 			# FIXME: ODS returns 256 columns.
-			preg_match('/\.ods$/i', $file) && $row = array_splice($row, 0, $expect_col_count);
+			($type == $class::TYPE_ODS) && $row = array_splice($row, 0, $expect_col_count);
 
 			$this->assertEquals($expect_col_count, count($row), "Expected $expect_col_count columns in $file but got " . count($row) . ' instead');
 
@@ -104,13 +109,13 @@ class Test extends PHPUnit_Framework_TestCase
 			$this->assertEquals($expect_first_row_last_col, $got, "First record of $file contains \"$expect_first_row_last_col\"");
 
 			# Test count() before iteration.
-			!preg_match('/\.xls$/i', $file) || $this->assertEquals($expect_row_count, $reader->count(), "Expected $expect_row_count rows in $file but got " . $reader->count() . ' instead');
+			($type == $class::TYPE_XLS) && $this->assertEquals($expect_row_count, $reader->count(), "Expected $expect_row_count rows in $file but got " . $reader->count() . ' instead');
 
 			# Iterate to end.
 			$y = 0;
 			foreach($reader as $row) {
 				$y++;
-				if (preg_match('/\.ods$/i', $file) && ($y >= $expect_row_count)) { # FIXME: ODS reads blank rows past end of data.
+				if (($type == $class::TYPE_ODS) && ($y >= $expect_row_count)) { # FIXME: ODS reads blank rows past end of data.
 					break;
 				}
 			}
@@ -137,17 +142,25 @@ if (isset($argv)) {
 	if (count($argv) >= 2) {
 		$file = $argv[1];
 		$reader = new $class($file);
-		$file_encoding = preg_match('/\.xls$/i', $file) ? 'Windows-1252' : 'UTF-8';	# XLS stores data in 8bit ANSI format.
+		$type = $reader->getReaderType();
+		$file_encoding = ($type == $class::TYPE_XLS) ? 'Windows-1252' : 'UTF-8';	# XLS stores data in 8bit ANSI format.
+		$y = 0;
+		$max_rows = 5;
 		foreach($reader as $row) {
 			print mb_convert_encoding(print_r($row,1), $terminal_encoding, $file_encoding);
+			if ($max_rows && (++$y > $max_rows)) {
+				break;
+			}
 		}
 	}
 	else {
 		$files = Test::$files;
 		foreach ($files as $file) {
-			$file_encoding = preg_match('/\.xls$/i', $file) ? 'Windows-1252' : 'UTF-8';
 			print $file . ":\n";
 			$reader = new $class("data/$file");
+			$type = $reader->getReaderType();
+			print "type: $type\n";
+			$file_encoding = ($type == $class::TYPE_XLS) ? 'Windows-1252' : 'UTF-8';
 			#$row = $reader->current();
 			#print_r($row);
 			foreach($reader as $row) {

@@ -131,9 +131,30 @@
 					case 'odt':
 						$this -> Type = self::TYPE_ODS;
 						break;
-					default:
-						$this -> Type = self::TYPE_CSV;
-						break;
+				}
+			}
+
+			// Still not found? Don't default to CSV just yet.
+			if (!$this->Type) {
+				if (($MimeType == 'application/zip') || ($Extension == 'zip')) {
+					$zip = new ZipArchive();
+					if ($zip->open($Filepath) === true) {
+						$i = $zip->locateName('mimetype');
+						if ($i !== false) {
+							$MimeType = $zip->getFromName('mimetype', 100);
+							if ($MimeType == 'application/vnd.oasis.opendocument.spreadsheet') {
+								$this->Type = self::TYPE_ODS;
+							}
+						}
+						$zip->close();
+					}
+					unset($zip);
+					if (!$this->Type) {
+						$this->Type = self::TYPE_XLSX; # default ZIP type
+					}
+				}
+				else {
+					$this->Type = self::TYPE_CSV;
 				}
 			}
 
@@ -178,6 +199,17 @@
 					break;
 			}
 		}
+
+
+		/**
+		* Returns the reader type. One of 'XLS', 'XLSX', 'ODS', 'CSV'.
+		*
+		* @return string
+		*/
+		public function getReaderType() {
+			return $this->Type;
+		}
+
 
 		/**
 		 * Gets information about separate sheets in the given file
@@ -226,10 +258,10 @@
 
 		// !Iterator interface methods
 
-		/** 
+		/**
 		 * Rewind the Iterator to the first element.
 		 * Similar to the reset() function for arrays in PHP
-		 */ 
+		 */
 		public function rewind()
 		{
 			$this -> Index = 0;
@@ -239,7 +271,7 @@
 			}
 		}
 
-		/** 
+		/**
 		 * Return the current element.
 		 * Similar to the current() function for arrays in PHP
 		 *
@@ -254,10 +286,10 @@
 			return null;
 		}
 
-		/** 
-		 * Move forward to next element. 
-		 * Similar to the next() function for arrays in PHP 
-		 */ 
+		/**
+		 * Move forward to next element.
+		 * Similar to the next() function for arrays in PHP
+		 */
 		public function next()
 		{
 			if ($this -> Handle)
@@ -269,12 +301,12 @@
 			return null;
 		}
 
-		/** 
+		/**
 		 * Return the identifying key of the current element.
 		 * Similar to the key() function for arrays in PHP
 		 *
 		 * @return mixed either an integer or a string
-		 */ 
+		 */
 		public function key()
 		{
 			if ($this -> Handle)
@@ -284,12 +316,12 @@
 			return null;
 		}
 
-		/** 
+		/**
 		 * Check if there is a current element after calls to rewind() or next().
 		 * Used to check if we've iterated to the end of the collection
 		 *
 		 * @return boolean FALSE if there's nothing more to iterate over
-		 */ 
+		 */
 		public function valid()
 		{
 			if ($this -> Handle)
