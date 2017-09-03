@@ -41,7 +41,7 @@
  * @package	Spreadsheet_Excel_Reader
  * @author	 Vadim Tkachenko <vt@apachephp.com>
  * @license	http://www.php.net/license/3_0.txt  PHP License 3.0
- * @version	CVS: $Id: reader.php 19 2007-03-13 12:42:41Z shangxiao $
+ * @version	CVS: Id: reader.php 19 2007-03-13 12:42:41Z shangxiao
  * @link	   http://pear.php.net/package/Spreadsheet_Excel_Reader
  * @see		OLE, Spreadsheet_Excel_Writer
  * --------------------------------------------------------------------------
@@ -94,7 +94,7 @@ function v($data,$pos) {
 
 class OLERead {
 	var $data = '';
-	function OLERead(){	}
+	function __construct(){	}
 
 	function read($sFileName){
 		// check if file exist and is readable (Darko Miljanovic)
@@ -364,7 +364,7 @@ class Spreadsheet_Excel_Reader {
 		return "";
 	}
 	function type($row,$col,$sheet=0) {
-		return $this->info($row,$col,'type',$sheet);
+		return $this->info($row,$col,'rectype',$sheet);	 // was 'type'
 	}
 	function raw($row,$col,$sheet=0) {
 		return $this->info($row,$col,'raw',$sheet);
@@ -912,9 +912,9 @@ class Spreadsheet_Excel_Reader {
 	 *
 	 * Some basic initialisation
 	 */
-	function Spreadsheet_Excel_Reader($file='',$store_extended_info=true,$outputEncoding='') {
+	function __construct($file='',$store_extended_info=true,$outputEncoding='', $utf_encoder = 'iconv') {
 		$this->_ole = new OLERead();
-		$this->setUTFEncoder('iconv');
+		$this->setUTFEncoder($utf_encoder);
 		if ($outputEncoding != '') { 
 			$this->setOutputEncoding($outputEncoding);
 		}
@@ -1733,5 +1733,3 @@ class Spreadsheet_Excel_Reader {
 	}
 
 }
-
-?>
