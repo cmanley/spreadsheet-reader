@@ -145,10 +145,10 @@ if (isset($argv)) {
 		$type = $reader->getReaderType();
 		$file_encoding = ($type == $class::TYPE_XLS) ? 'Windows-1252' : 'UTF-8';	# XLS stores data in 8bit ANSI format.
 		$y = 0;
-		$max_rows = 5;
+		$max_rows = 1;
 		foreach($reader as $row) {
 			print mb_convert_encoding(print_r($row,1), $terminal_encoding, $file_encoding);
-			if ($max_rows && (++$y > $max_rows)) {
+			if ($max_rows && (++$y >= $max_rows)) {
 				break;
 			}
 		}
